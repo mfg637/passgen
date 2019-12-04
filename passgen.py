@@ -54,10 +54,14 @@ class MainWindow:
 		self._generate_password_button.grid(row=3, column=0, columnspan=2)
 		self._password_caption_label = tkinter.Label(self._root, text="New password is:")
 		self._password_caption_label.grid(row=4, column=0, sticky="w")
-		self._password_label = tkinter.Label(self._root, text="No passwords generated")
-		self._password_label.grid(row=5, column=0, columnspan=2)
+		self._password_field = tkinter.Entry(self._root, width=35)
+		self._password_field.insert(0, "No passwords generated")
+		self._password_field.grid(row=5, column=0, columnspan=2)
 		self._copy_pass_button = tkinter.Button(self._root, text="Copy password", command=self.copy_password)
 		self._copy_pass_button.grid(row=6, column=0)
+		self._mutation_button = tkinter.Button(self._root, text="Password mutation",
+			command=self.password_mutation)
+		self._mutation_button.grid(row=6, column=1)
 		self._root.mainloop()
 
 	def generate_password(self):
@@ -75,12 +79,23 @@ class MainWindow:
 				password = ""
 				for i in range(password_len):
 					password += random.choice(password_characters)
-		self._password_label['text'] = password
+		self._password_field.delete(0, tkinter.END)
+		self._password_field.insert(0, password)
 
 	def copy_password(self):
 		self._root.clipboard_clear()
-		self._root.clipboard_append(self._password_label['text'])
+		self._root.clipboard_append(self._password_field.get())
 		self._root.update()
+
+	def password_mutation(self):
+		password = self._password_field.get()
+		mutate_char = random.choice(range(len(password)))
+		if (mutate_char>0):
+			password = password[:mutate_char] + random.choice(password_characters) + password[mutate_char+1:]
+		elif mutate_char == 0:
+			password = random.choice(password_characters) + password[mutate_char+1:]
+		self._password_field.delete(0, tkinter.END)
+		self._password_field.insert(0, password)
 
 
 window = MainWindow()
