@@ -36,6 +36,7 @@ def strcmp(istr, tstr):
 	return len(max_closure)
 
 def passgen(passlen, simlen, simword, pipe_conection):
+	random.seed()
 	password_len = passlen
 	password = ''
 	similar_word = simword
@@ -108,7 +109,7 @@ class MainWindow:
 					)
 					process_list[i].start()
 					from time import sleep
-					sleep(0.1)
+					sleep(0.5)
 				while len(password)==0:
 					for i in range(process_count):
 						if not process_list[i].is_alive():
