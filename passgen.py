@@ -1,5 +1,9 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
 import random
 import tkinter
+import multiprocessing
 
 lowercase_letters = [chr(i) for i in range(ord('a'), ord('z')+1)]
 uppercase_letters = [chr(i) for i in range(ord('A'), ord('Z')+1)]
@@ -30,6 +34,24 @@ def strcmp(istr, tstr):
 			j+=1
 		i+=1
 	return len(max_closure)
+
+def passgen(passlen, simlen, simword, pipe_conection):
+	password_len = passlen
+	password = ''
+	similar_word = simword
+	similar_chars = min(simlen, len(similar_word))
+	generate_similar_password = len(similar_word) > 0
+	for i in range(password_len):
+		password += random.choice(password_characters)
+	while (generate_similar_password):
+		if strcmp(password.lower(), similar_word) >= similar_chars:
+			generate_similar_password = False
+		else:
+			password = ""
+			for i in range(password_len):
+				password += random.choice(password_characters)
+	pipe_conection.send(password)
+	pipe_conection.close()
 
 class MainWindow:
 	def __init__(self):
@@ -70,15 +92,41 @@ class MainWindow:
 		similar_word = self._similar_word_field.get()
 		similar_chars = min(int(self._similarity_len_field.get()), len(similar_word))
 		generate_similar_password = len(similar_word)>0
-		for i in range(password_len):
-			password += random.choice(password_characters)
-		while (generate_similar_password):
-			if strcmp(password.lower(), similar_word)>=similar_chars:
-				generate_similar_password = False
+		if not generate_similar_password:
+			for i in range(password_len):
+				password += random.choice(password_characters)
+		else:
+			process_list = []
+			pipe_list = []
+			process_count = multiprocessing.cpu_count()-1
+			if process_count>1:
+				for i in range(process_count):
+					pipes = multiprocessing.Pipe()
+					pipe_list.append(pipes[0])
+					process_list.append(
+						multiprocessing.Process(target=passgen, args=(password_len, similar_chars, similar_word, pipes[1]))
+					)
+					process_list[i].start()
+					from time import sleep
+					sleep(0.1)
+				while len(password)==0:
+					for i in range(process_count):
+						if not process_list[i].is_alive():
+							password = pipe_list[i].recv()
+							print("password", password)
+							#break
+				for i in range(process_count):
+					process_list[i].terminate()
 			else:
-				password = ""
 				for i in range(password_len):
 					password += random.choice(password_characters)
+				while (generate_similar_password):
+					if strcmp(password.lower(), similar_word) >= similar_chars:
+						generate_similar_password = False
+					else:
+						password = ""
+						for i in range(password_len):
+							password += random.choice(password_characters)
 		self._password_field.delete(0, tkinter.END)
 		self._password_field.insert(0, password)
 
